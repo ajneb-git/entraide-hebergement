@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entraide Hébergement — Feux de forêt Gironde</title>
+<style>
+  :root{
+    --pine:#193A2E;
+    --pine-deep:#0E241C;
+    --sand:#F2ECDD;
+    --sand-card:#FFFDF7;
+    --ink:#1B241E;
+    --ink-soft:#4B564E;
+    --line:#D9CFB3;
+    --alert:#B8481E;
+    --alert-bg:#FBE7DC;
+    --water:#1F5B66;
+    --water-soft:#E4EEEC;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--sand);
+    color:var(--ink);
+    font-family:'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height:1.5;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap');
+  h1,h2,h3,.brand,.tab,.btn,.card-badge{font-family:'Barlow Semi Condensed', 'Public Sans', sans-serif;}
+
+  header.top{
+    background:var(--pine);
+    color:var(--sand);
+    padding:22px 18px 26px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    font-weight:800; font-size:1.05rem; letter-spacing:.02em;
+    text-transform:uppercase;
+  }
+  .brand-mark{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--alert);
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px; flex-shrink:0;
+  }
+  header.top h1{
+    margin:14px 0 4px; font-size:1.7rem; font-weight:800; letter-spacing:.01em;
+  }
+  header.top p{margin:0; color:#CFE0D6; font-size:.95rem; max-width:56ch;}
+
+  .wrap{max-width:880px; margin:0 auto; padding:0 18px;}
+
+  .alertbar{
+    background:var(--alert-bg);
+    border:1px solid #E7BCA4;
+    color:var(--alert);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin:-14px auto 22px;
+    font-size:.92rem;
+  }
+  .alertbar b{display:block; margin-bottom:4px; font-size:.98rem;}
+  .alertbar a{color:var(--alert); font-weight:600;}
+
+  .tabs{display:flex; gap:8px; margin:22px 0 18px; flex-wrap:wrap;}
+  .tab{
+    flex:1; min-width:160px;
+    border:1px solid var(--line); background:var(--sand-card);
+    border-radius:var(--radius); padding:14px 16px;
+    cursor:pointer; text-align:left; font-weight:700; font-size:1rem;
+    color:var(--ink); transition:.15s ease;
+  }
+  .tab small{display:block; font-family:'Public Sans',sans-serif; font-weight:400; color:var(--ink-soft); font-size:.8rem; margin-top:3px;}
+  .tab.active{background:var(--pine); color:var(--sand); border-color:var(--pine);}
+  .tab.active small{color:#CFE0D6;}
+  .tab:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{
+    outline:3px solid var(--water); outline-offset:2px;
+  }
+
+  .panel{
+    background:var(--sand-card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px; margin-bottom:24px;
+  }
+  .panel h2{margin:0 0 4px; font-size:1.25rem;}
+  .panel .hint{color:var(--ink-soft); font-size:.88rem; margin:0 0 16px;}
+
+  form{display:grid; gap:12px;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:520px){.row2{grid-template-columns:1fr;}}
+  label{font-size:.85rem; font-weight:600; color:var(--ink); display:block; margin-bottom:4px;}
+  input,select,textarea{
+    width:100%; padding:10px 11px; border:1px solid var(--line); border-radius:8px;
+    font-size:.95rem; font-family:'Public Sans',sans-serif; background:#fff; color:var(--ink);
+  }
+  textarea{resize:vertical; min-height:64px;}
+  .field-note{font-size:.78rem; color:var(--ink-soft); margin-top:3px;}
+
+  .btn{
+    border:none; border-radius:8px; padding:11px 18px; font-weight:700; font-size:.95rem;
+    cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn-primary{background:var(--pine); color:var(--sand);}
+  .btn-primary:hover{background:var(--pine-deep);}
+  .btn-ghost{background:transparent; color:var(--water); border:1px solid var(--water);}
+  .btn-ghost:hover{background:var(--water-soft);}
+  .btn-danger{background:transparent; color:var(--alert); border:1px solid var(--alert); font-size:.8rem; padding:6px 10px;}
+
+  .list-controls{display:flex; gap:8px; align-items:center; margin:0 0 14px; flex-wrap:wrap;}
+  .list-controls select, .list-controls input{width:auto; flex:1; min-width:140px;}
+  .count-tag{font-size:.85rem; color:var(--ink-soft); white-space:nowrap;}
+
+  .cards{display:grid; gap:12px;}
+  .card{
+    background:var(--sand-card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:15px 16px; position:relative;
+  }
+  .card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;}
+  .card-badge{
+    font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    padding:3px 9px; border-radius:20px;
+  }
+  .badge-besoin{background:var(--alert-bg); color:var(--alert);}
+  .badge-offre{background:var(--water-soft); color:var(--water);}
+  .card-secteur{font-weight:700; font-size:1.02rem;}
+  .card-meta{font-size:.85rem; color:var(--ink-soft); margin:2px 0 8px;}
+  .card-msg{font-size:.92rem; margin:0 0 10px; white-space:pre-wrap;}
+  .card-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .contact-box{
+    margin-top:8px; padding:8px 10px; background:var(--water-soft); border-radius:6px;
+    font-size:.9rem; font-weight:600; color:var(--pine-deep); word-break:break-word;
+  }
+  .empty{color:var(--ink-soft); font-size:.92rem; padding:14px 0;}
+
+  footer{
+    margin:30px 0 40px; padding-top:18px; border-top:1px solid var(--line);
+    font-size:.82rem; color:var(--ink-soft);
+  }
+  footer h3{color:var(--ink); font-size:.95rem; margin-bottom:6px;}
+  .safety-list{margin:0 0 14px; padding-left:18px;}
+  .safety-list li{margin-bottom:4px;}
+
+  .toast{
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    background:var(--pine-deep); color:#fff; padding:10px 18px; border-radius:8px;
+    font-size:.88rem; opacity:0; pointer-events:none; transition:opacity .2s;
+  }
+  .toast.show{opacity:1;}
+  .modal-close-row{display:flex; justify-content:flex-end;}
+  .visually-hidden{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><span class="brand-mark">i</span> Entraide indépendante — non officielle</div>
+    <h1>Annuaire d'entraide hébergement</h1>
+    <p>Feux de forêt en Gironde, juillet 2026. Un espace pour se signaler entre voisins — sans intermédiaire, sans garantie.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="alertbar">
+    <b>En urgence vitale : 18 (pompiers) ou 112.</b>
+    Pour un hébergement d'urgence encadré, les centres d'accueil ouverts par la préfecture restent la solution la plus sûre (Lège-Cap-Ferret, Lacanau, Le Porge, Biganos, Marcheprime, Mios, Hourtin, Carcans, Audenge, Andernos-les-Bains, Lanton, Bordeaux). Suivez la situation sur
+    <a href="https://www.gironde.gouv.fr" target="_blank" rel="noopener">gironde.gouv.fr</a>.
+    Cet annuaire est un outil communautaire complémentaire, non vérifié, non affilié à la préfecture.
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" id="tab-besoin" role="tab" aria-selected="true" onclick="switchTab('besoin')">
+      Je cherche un hébergement
+      <small>Publier une demande</small>
+    </button>
+    <button class="tab" id="tab-offre" role="tab" aria-selected="false" onclick="switchTab('offre')">
+      Je peux héberger
+      <small>Publier une offre</small>
+    </button>
+  </div>
+
+  <div class="panel" id="panel-besoin">
+    <h2>Publier une demande d'hébergement</h2>
+    <p class="hint">Ces informations seront visibles publiquement. Ne donnez pas votre adresse exacte — un secteur ou une commune suffit.</p>
+    <form id="form-besoin" onsubmit="return submitListing(event,'besoin')">
+      <div class="row2">
+        <div><label for="b-prenom">Prénom</label><input id="b-prenom" required maxlength="40"></div>
+        <div><label for="b-secteur">Commune / secteur actuel</label><input id="b-secteur" required maxlength="60" placeholder="ex. Lège-Cap-Ferret"></div>
+      </div>
+      <div class="row2">
+        <div><label for="b-personnes">Nombre de personnes</label><input id="b-personnes" type="number" min="1" max="20" required></div>
+        <div><label for="b-duree">Durée estimée</label>
+          <select id="b-duree" required>
+            <option value="">Choisir…</option>
+            <option>1 nuit</option>
+            <option>2-3 nuits</option>
+            <option>Environ 1 semaine</option>
+            <option>Durée indéterminée</option>
+          </select>
+        </div>
+      </div>
+      <div><label for="b-animaux">Animaux</label><input id="b-animaux" maxlength="60" placeholder="ex. 1 chien — laisser vide si aucun"></div>
+      <div><label for="b-message">Message (optionnel)</label><textarea id="b-message" maxlength="300" placeholder="Précisions utiles : besoin d'un accès PMR, allergie, etc."></textarea></div>
+      <div class="row2">
+        <div><label for="b-contact">Comment vous contacter</label><input id="b-contact" required maxlength="80" placeholder="Téléphone ou email"></div>
+        <div><label for="b-code">Code de suppression (4 chiffres)</label><input id="b-code" required pattern="[0-9]{4}" maxlength="4" placeholder="ex. 4821">
+          <div class="field-note">À retenir pour retirer votre annonce plus tard.</div>
+        </div>
+      </div>
+      <div><button class="btn btn-primary" type="submit">Publier ma demande</button></div>
+    </form>
+  </div>
+
+  <div class="panel" id="panel-offre" style="display:none">
+    <h2>Publier une offre d'hébergement</h2>
+    <p class="hint">Ces informations seront visibles publiquement. Ne donnez pas votre adresse exacte — un secteur ou une commune suffit. Privilégiez un premier contact téléphonique avant d'accueillir quelqu'un.</p>
+    <form id="form-offre" onsubmit="return submitListing(event,'offre')">
+      <div class="row2">
+        <div><label for="o-prenom">Prénom</label><input id="o-prenom" required maxlength="40"></div>
+        <div><label for="o-secteur">Commune / secteur</label><input id="o-secteur" required maxlength="60" placeholder="ex. Bordeaux, Gradignan…"></div>
+      </div>
+      <div class="row2">
+        <div><label for="o-capacite">Capacité d'accueil</label><input id="o-capacite" type="number" min="1" max="20" required placeholder="nb. de personnes"></div>
+        <div><label for="o-duree">Disponible pour</label>
+          <select id="o-duree" required>
+            <option value="">Choisir…</option>
+            <option>1 nuit</option>
+            <option>2-3 nuits</option>
+            <option>Environ 1 semaine</option>
+            <option>Durée indéterminée</option>
+          </select>
+        </div>
+      </div>
+      <div><label for="o-type">Type de logement</label><input id="o-type" maxlength="60" placeholder="ex. chambre, logement entier, camping-car"></div>
+      <div><label for="o-message">Message (optionnel)</label><textarea id="o-message" maxlength="300" placeholder="Précisions utiles : animaux acceptés, accès PMR, etc."></textarea></div>
+      <div class="row2">
+        <div><label for="o-contact">Comment vous contacter</label><input id="o-contact" required maxlength="80" placeholder="Téléphone ou email"></div>
+        <div><label for="o-code">Code de suppression (4 chiffres)</label><input id="o-code" required pattern="[0-9]{4}" maxlength="4" placeholder="ex. 4821">
+          <div class="field-note">À retenir pour retirer votre annonce plus tard.</div>
+        </div>
+      </div>
+      <div><button class="btn btn-primary" type="submit">Publier mon offre</button></div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Annonces publiées</h2>
+    <div class="list-controls">
+      <select id="filter-type" onchange="renderList()">
+        <option value="all">Toutes les annonces</option>
+        <option value="besoin">Demandes d'hébergement</option>
+        <option value="offre">Offres d'hébergement</option>
+      </select>
+      <input id="filter-secteur" placeholder="Filtrer par commune…" oninput="renderList()">
+      <button class="btn btn-ghost" onclick="loadListings()">Actualiser</button>
+      <span class="count-tag" id="count-tag"></span>
+    </div>
+    <div id="cards" class="cards"><p class="empty">Chargement…</p></div>
+  </div>
+
+  <footer>
+    <h3>Avant de contacter ou d'accueillir quelqu'un</h3>
+    <ul class="safety-list">
+      <li>Cet annuaire n'est ni vérifié ni modéré par une autorité — les informations publiées engagent uniquement leurs auteurs.</li>
+      <li>Privilégiez un appel téléphonique avant tout déplacement, et donnez-vous rendez-vous dans un lieu public si possible.</li>
+      <li>Ne communiquez pas votre adresse exacte publiquement.</li>
+      <li>Les annonces expirent automatiquement après 10 jours.</li>
+    </ul>
+    <p>Outil indépendant, sans lien avec la préfecture de la Gironde ni les services de secours.</p>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://cnimndyaehrjtsqalwfu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuaW1uZHlhZWhyanRzcWFsd2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDUyNTIsImV4cCI6MjEwMDQ4MTI1Mn0.iCGdfRnxdxk7lu3vm-FxUFINCD1cGm5QIP-iUb_t-d8';
+const SB_TABLE = 'listings';
+const SB_HEADERS = {
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+  'Content-Type': 'application/json'
+};
+const EXPIRE_DAYS = 10;
+let allListings = [];
+
+function switchTab(which){
+  document.getElementById('tab-besoin').classList.toggle('active', which==='besoin');
+  document.getElementById('tab-offre').classList.toggle('active', which==='offre');
+  document.getElementById('tab-besoin').setAttribute('aria-selected', which==='besoin');
+  document.getElementById('tab-offre').setAttribute('aria-selected', which==='offre');
+  document.getElementById('panel-besoin').style.display = which==='besoin' ? '' : 'none';
+  document.getElementById('panel-offre').style.display = which==='offre' ? '' : 'none';
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function submitListing(ev, type){
+  ev.preventDefault();
+  const p = type === 'besoin' ? 'b-' : 'o-';
+  const get = id => document.getElementById(p+id).value.trim();
+
+  const code = get('code');
+  if(!/^[0-9]{4}$/.test(code)){ showToast('Le code de suppression doit être 4 chiffres.'); return false; }
+
+  const now = Date.now();
+  const obj = {
+    id: 'l' + now + '-' + Math.floor(Math.random()*10000),
+    type,
+    prenom: get('prenom'),
+    secteur: get('secteur'),
+    duree: get('duree'),
+    message: get('message'),
+    contact: get('contact'),
+    code,
+    personnes: null,
+    animaux: null,
+    capacite: null,
+    logement: null,
+    created_at: now,
+    expires_at: now + EXPIRE_DAYS*24*60*60*1000
+  };
+  if(type === 'besoin'){
+    obj.personnes = get('personnes');
+    obj.animaux = get('animaux');
+  } else {
+    obj.capacite = get('capacite');
+    obj.logement = get('type');
+  }
+
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SB_TABLE}`, {
+      method: 'POST',
+      headers: {...SB_HEADERS, 'Prefer': 'return=minimal'},
+      body: JSON.stringify(obj)
+    });
+    if(!res.ok) throw new Error('échec ' + res.status);
+    showToast('Annonce publiée.');
+    ev.target.reset();
+    loadListings();
+  }catch(e){
+    showToast("Erreur lors de la publication — réessayez.");
+    console.error(e);
+  }
+  return false;
+}
+
+async function loadListings(){
+  const cardsEl = document.getElementById('cards');
+  cardsEl.innerHTML = '<p class="empty">Chargement…</p>';
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SB_TABLE}?select=*&order=created_at.desc`, {
+      headers: SB_HEADERS
+    });
+    if(!res.ok) throw new Error('échec ' + res.status);
+    const items = await res.json();
+    const now = Date.now();
+    allListings = items
+      .map(it => ({...it, createdAt: it.created_at, expiresAt: it.expires_at}))
+      .filter(it => !it.expiresAt || it.expiresAt > now);
+    renderList();
+  }catch(e){
+    cardsEl.innerHTML = '<p class="empty">Impossible de charger les annonces pour le moment.</p>';
+    console.error(e);
+  }
+}
+
+function renderList(){
+  const typeFilter = document.getElementById('filter-type').value;
+  const secteurFilter = document.getElementById('filter-secteur').value.trim().toLowerCase();
+  const cardsEl = document.getElementById('cards');
+
+  let items = allListings.slice();
+  if(typeFilter !== 'all') items = items.filter(it => it.type === typeFilter);
+  if(secteurFilter) items = items.filter(it => (it.secteur||'').toLowerCase().includes(secteurFilter));
+
+  document.getElementById('count-tag').textContent = items.length + ' annonce' + (items.length>1?'s':'');
+
+  if(items.length === 0){
+    cardsEl.innerHTML = '<p class="empty">Aucune annonce pour l\'instant.</p>';
+    return;
+  }
+
+  cardsEl.innerHTML = items.map(renderCard).join('');
+}
+
+function renderCard(it){
+  const isBesoin = it.type === 'besoin';
+  const badge = isBesoin
+    ? '<span class="card-badge badge-besoin">Recherche</span>'
+    : '<span class="card-badge badge-offre">Offre</span>';
+  const metaBits = [];
+  if(isBesoin){
+    metaBits.push((it.personnes||'?') + ' personne' + (it.personnes>1?'s':''));
+    if(it.animaux) metaBits.push(it.animaux);
+  } else {
+    metaBits.push('Capacité : ' + (it.capacite||'?') + ' pers.');
+    if(it.logement) metaBits.push(it.logement);
+  }
+  if(it.duree) metaBits.push(it.duree);
+
+  return `
+  <div class="card" data-id="${escapeHtml(it.id)}">
+    <div class="card-top">
+      ${badge}
+      <button class="btn-danger" onclick="deleteListing('${escapeHtml(it.id)}')">Retirer</button>
+    </div>
+    <div class="card-secteur">${escapeHtml(it.secteur)} — ${escapeHtml(it.prenom)}</div>
+    <div class="card-meta">${escapeHtml(metaBits.join(' · '))}</div>
+    ${it.message ? `<p class="card-msg">${escapeHtml(it.message)}</p>` : ''}
+    <div class="card-actions">
+      <button class="btn btn-ghost" onclick="revealContact('${escapeHtml(it.id)}', this)">Afficher le contact</button>
+    </div>
+  </div>`;
+}
+
+function revealContact(id, btn){
+  const it = allListings.find(l => l.id === id);
+  if(!it) return;
+  const box = document.createElement('div');
+  box.className = 'contact-box';
+  box.textContent = it.contact;
+  btn.replaceWith(box);
+}
+
+async function deleteListing(id){
+  const code = prompt('Code de suppression (4 chiffres) pour retirer cette annonce :');
+  if(code === null) return;
+  try{
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/${SB_TABLE}?id=eq.${encodeURIComponent(id)}&code=eq.${encodeURIComponent(code.trim())}`,
+      { method: 'DELETE', headers: {...SB_HEADERS, 'Prefer': 'return=representation'} }
+    );
+    if(!res.ok) throw new Error('échec ' + res.status);
+    const deleted = await res.json();
+    if(!deleted.length){ showToast('Code incorrect ou annonce introuvable.'); return; }
+    showToast('Annonce retirée.');
+    loadListings();
+  }catch(e){
+    showToast('Erreur — réessayez.');
+    console.error(e);
+  }
+}
+
+loadListings();
+</script>
+</body>
+</html>

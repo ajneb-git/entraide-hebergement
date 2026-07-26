@@ -17,6 +17,8 @@
     --alert-bg:#FBE7DC;
     --water:#1F5B66;
     --water-soft:#E4EEEC;
+    --fresh:#2F8F5B;
+    --fresh-bg:#E3F1E8;
     --radius:10px;
   }
   *{box-sizing:border-box;}
@@ -140,6 +142,10 @@
   }
   .badge-besoin{background:var(--alert-bg); color:var(--alert);}
   .badge-offre{background:var(--water-soft); color:var(--water);}
+  .badge-new{background:var(--fresh-bg); color:var(--fresh);}
+  .card-badges{display:flex; gap:6px; flex-wrap:wrap; align-items:center; min-width:0; flex:1;}
+  .card-age{font-size:.78rem; color:var(--ink-soft); white-space:nowrap;}
+  #filter-recent-btn[aria-pressed="true"]{background:var(--fresh); color:#fff; border-color:var(--fresh);}
   .card-secteur{font-weight:700; font-size:1.02rem;}
   .card-meta{font-size:.85rem; color:var(--ink-soft); margin:2px 0 8px;}
   .card-msg{font-size:.92rem; margin:0 0 10px; white-space:pre-wrap;}
@@ -325,6 +331,7 @@
         <option value="Environ 1 semaine">Environ 1 semaine</option>
         <option value="Durée indéterminée">Durée indéterminée</option>
       </select>
+      <button class="btn btn-ghost" id="filter-recent-btn" type="button" onclick="toggleRecentFilter()" aria-pressed="false">🆕 Dernières 24h</button>
       <button class="btn btn-ghost" onclick="resetFilters()">Réinitialiser</button>
       <button class="btn btn-ghost" onclick="loadListings()">Actualiser</button>
     </div>
@@ -339,6 +346,7 @@
       <li>Ne communiquez pas votre adresse exacte publiquement.</li>
       <li>Les annonces expirent automatiquement après 10 jours.</li>
     </ul>
+    <a class="btn btn-primary" href="conseils.html" style="margin-bottom:14px;">📋 Voir tous nos conseils de sécurité</a>
     <p>Outil indépendant, sans lien avec la préfecture de la Gironde ni les services de secours.</p>
   </footer>
 </div>
@@ -387,6 +395,20 @@ const SB_HEADERS = {
 };
 const EXPIRE_DAYS = 10;
 let allListings = [];
+const RECENT_MS = 24*60*60*1000;
+let recentOnly = false;
+
+function isRecent(ts){ return typeof ts === 'number' && (Date.now() - ts) < RECENT_MS; }
+function timeAgo(ts){
+  if(typeof ts !== 'number') return '';
+  const diffMin = Math.floor((Date.now() - ts) / 60000);
+  if(diffMin < 1) return 'à l\'instant';
+  if(diffMin < 60) return 'il y a ' + diffMin + ' min';
+  const h = Math.floor(diffMin / 60);
+  if(h < 24) return 'il y a ' + h + 'h';
+  const d = Math.floor(h / 24);
+  return 'il y a ' + d + ' j';
+}
 
 // Appel d'une fonction serveur (RPC). Lève une erreur avec .message côté serveur si échec.
 async function sbRpc(fn, params){
@@ -518,7 +540,16 @@ function resetFilters(){
   document.getElementById('filter-logement').value = '';
   document.getElementById('filter-capacite').value = '0';
   document.getElementById('filter-duree').value = '';
+  recentOnly = false;
+  const btn = document.getElementById('filter-recent-btn');
+  if(btn) btn.setAttribute('aria-pressed', 'false');
   onTypeChange();
+}
+
+function toggleRecentFilter(){
+  recentOnly = !recentOnly;
+  document.getElementById('filter-recent-btn').setAttribute('aria-pressed', String(recentOnly));
+  renderList();
 }
 
 function goToOffers(){
@@ -557,11 +588,12 @@ function renderList(){
     const cap = parseInt(it.capacite, 10);
     return !isNaN(cap) && cap >= capaciteFilter;
   });
+  if(recentOnly) items = items.filter(it => isRecent(it.createdAt));
 
   document.getElementById('count-tag').textContent = items.length + ' annonce' + (items.length>1?'s':'');
 
   if(items.length === 0){
-    const hasFilters = typeFilter!=='all' || secteurFilter || dureeFilter || (offreScope && (logementFilter || capaciteFilter));
+    const hasFilters = typeFilter!=='all' || secteurFilter || dureeFilter || recentOnly || (offreScope && (logementFilter || capaciteFilter));
     cardsEl.innerHTML = '<p class="empty">' + (hasFilters
       ? 'Aucune annonce ne correspond à ces critères.'
       : 'Aucune annonce pour l\'instant.') + '</p>';
@@ -586,10 +618,13 @@ function renderCard(it){
   }
   if(it.duree) metaBits.push(it.duree);
 
+  const newBadge = isRecent(it.createdAt) ? '<span class="card-badge badge-new">🆕 Nouveau</span>' : '';
+  const age = it.createdAt ? `<span class="card-age">Publié ${escapeHtml(timeAgo(it.createdAt))}</span>` : '';
+
   return `
   <div class="card" data-id="${escapeHtml(it.id)}">
     <div class="card-top">
-      ${badge}
+      <div class="card-badges">${badge}${newBadge}${age}</div>
       <div class="card-top-btns">
         <button class="btn-edit" type="button" onclick="editListing('${escapeHtml(it.id)}')">Modifier</button>
         <button class="btn-danger" type="button" onclick="deleteListing('${escapeHtml(it.id)}')">Retirer</button>

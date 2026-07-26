@@ -120,13 +120,20 @@ const SUPABASE_URL = 'https://cnimndyaehrjtsqalwfu.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuaW1uZHlhZWhyanRzcWFsd2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDUyNTIsImV4cCI6MjEwMDQ4MTI1Mn0.iCGdfRnxdxk7lu3vm-FxUFINCD1cGm5QIP-iUb_t-d8';
 const SB_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
-// Renvoie le nombre de lignes via l'agrégat PostgREST select=count. -1 = table absente/erreur.
+// Renvoie le nombre de lignes via l'en-tête Prefer:count=exact (Content-Range).
+// (L'agrégat PostgREST select=count exige un accès complet à la table ; depuis le
+// durcissement RLS, l'anon n'a plus qu'un accès par colonnes explicites — Range:0-0
+// limite le transfert à 1 ligne tout en renvoyant le total exact.) -1 = erreur/accès refusé.
 async function count(path){
   try{
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}${path.includes('?')?'&':'?'}select=count`, { headers: SB_HEADERS });
+    const sep = path.includes('?') ? '&' : '?';
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}${sep}select=id`, {
+      headers: { ...SB_HEADERS, 'Prefer': 'count=exact', 'Range': '0-0' }
+    });
     if(!res.ok) return -1;
-    const data = await res.json();
-    return (data && data[0] && typeof data[0].count === 'number') ? data[0].count : 0;
+    const range = res.headers.get('content-range'); // format "0-0/123"
+    const total = range ? parseInt(range.split('/')[1], 10) : NaN;
+    return isNaN(total) ? -1 : total;
   }catch(e){ return -1; }
 }
 

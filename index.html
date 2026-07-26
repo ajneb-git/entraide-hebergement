@@ -108,9 +108,21 @@
   .btn-ghost:hover{background:var(--water-soft);}
   .btn-danger{background:transparent; color:var(--alert); border:1px solid var(--alert); font-size:.8rem; padding:6px 10px;}
 
+  .list-head{display:flex; justify-content:space-between; align-items:center; gap:10px; margin:0 0 12px; flex-wrap:wrap;}
+  .filters-toggle{display:none;}
   .list-controls{display:flex; gap:8px; align-items:center; margin:0 0 14px; flex-wrap:wrap;}
   .list-controls select, .list-controls input{width:auto; flex:1; min-width:140px;}
   .count-tag{font-size:.85rem; color:var(--ink-soft); white-space:nowrap;}
+
+  @media (max-width:520px){
+    .filters-toggle{display:inline-flex;}
+    .list-controls{display:none; flex-direction:column; align-items:stretch;}
+    .list-controls.open{display:flex;}
+    .list-controls > select, .list-controls > input, .list-controls > button{width:100%; min-width:0; flex:none;}
+    .btn-edit, .btn-danger{padding:13px 14px; font-size:.85rem;}
+    .card-top-btns{gap:10px;}
+    .card-actions .btn{width:100%; justify-content:center;}
+  }
 
   .cards{display:grid; gap:12px;}
   .card{
@@ -266,7 +278,11 @@
 
   <div class="panel">
     <h2>Annonces publiées</h2>
-    <div class="list-controls">
+    <div class="list-head">
+      <button class="btn btn-ghost filters-toggle" type="button" onclick="toggleFilters()" aria-expanded="false" aria-controls="list-controls">Filtrer les annonces ▾</button>
+      <span class="count-tag" id="count-tag"></span>
+    </div>
+    <div class="list-controls" id="list-controls">
       <select id="filter-type" onchange="onTypeChange()">
         <option value="all">Toutes les annonces</option>
         <option value="besoin">Demandes d'hébergement</option>
@@ -298,7 +314,6 @@
       </select>
       <button class="btn btn-ghost" onclick="resetFilters()">Réinitialiser</button>
       <button class="btn btn-ghost" onclick="loadListings()">Actualiser</button>
-      <span class="count-tag" id="count-tag"></span>
     </div>
     <div id="cards" class="cards"><p class="empty">Chargement…</p></div>
   </div>
@@ -491,6 +506,16 @@ function resetFilters(){
   document.getElementById('filter-capacite').value = '0';
   document.getElementById('filter-duree').value = '';
   onTypeChange();
+}
+
+function toggleFilters(){
+  const el = document.getElementById('list-controls');
+  const btn = document.querySelector('.filters-toggle');
+  const open = el.classList.toggle('open');
+  if(btn){
+    btn.setAttribute('aria-expanded', open);
+    btn.textContent = open ? 'Masquer les filtres ▴' : 'Filtrer les annonces ▾';
+  }
 }
 
 function renderList(){

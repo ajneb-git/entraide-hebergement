@@ -248,12 +248,36 @@
   <div class="panel">
     <h2>Annonces publiées</h2>
     <div class="list-controls">
-      <select id="filter-type" onchange="renderList()">
+      <select id="filter-type" onchange="onTypeChange()">
         <option value="all">Toutes les annonces</option>
         <option value="besoin">Demandes d'hébergement</option>
         <option value="offre">Offres d'hébergement</option>
       </select>
       <input id="filter-secteur" placeholder="Filtrer par commune…" oninput="renderList()">
+      <select id="filter-logement" class="offre-filter" onchange="renderList()" aria-label="Type de logement">
+        <option value="">Tout logement</option>
+        <option value="chambre">Chambre</option>
+        <option value="maison">Maison</option>
+        <option value="appartement">Appartement</option>
+        <option value="studio">Studio</option>
+        <option value="camping">Tente / camping-car</option>
+      </select>
+      <select id="filter-capacite" class="offre-filter" onchange="renderList()" aria-label="Capacité minimale">
+        <option value="0">Capacité indifférente</option>
+        <option value="1">≥ 1 personne</option>
+        <option value="2">≥ 2 personnes</option>
+        <option value="3">≥ 3 personnes</option>
+        <option value="4">≥ 4 personnes</option>
+        <option value="6">≥ 6 personnes</option>
+      </select>
+      <select id="filter-duree" onchange="renderList()" aria-label="Durée">
+        <option value="">Durée indifférente</option>
+        <option value="1 nuit">1 nuit</option>
+        <option value="2-3 nuits">2-3 nuits</option>
+        <option value="Environ 1 semaine">Environ 1 semaine</option>
+        <option value="Durée indéterminée">Durée indéterminée</option>
+      </select>
+      <button class="btn btn-ghost" onclick="resetFilters()">Réinitialiser</button>
       <button class="btn btn-ghost" onclick="loadListings()">Actualiser</button>
       <span class="count-tag" id="count-tag"></span>
     </div>
@@ -359,13 +383,14 @@ async function submitListing(ev, type){
 async function loadListings(){
   const cardsEl = document.getElementById('cards');
   cardsEl.innerHTML = '<p class="empty">Chargement…</p>';
+  const now = Date.now();
+  const cols = 'id,type,prenom,secteur,duree,message,contact,personnes,animaux,capacite,logement,created_at,expires_at';
   try{
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SB_TABLE}?select=*&order=created_at.desc`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SB_TABLE}?select=${cols}&or=(expires_at.gt.${now},expires_at.is.null)&order=created_at.desc`, {
       headers: SB_HEADERS
     });
     if(!res.ok) throw new Error('échec ' + res.status);
     const items = await res.json();
-    const now = Date.now();
     allListings = items
       .map(it => ({...it, createdAt: it.created_at, expiresAt: it.expires_at}))
       .filter(it => !it.expiresAt || it.expiresAt > now);
@@ -376,19 +401,63 @@ async function loadListings(){
   }
 }
 
+// Catégories de logement dérivées du texte libre saisi par les hébergeurs.
+const LOGEMENT_KEYWORDS = {
+  chambre: ['chambre'],
+  maison: ['maison'],
+  appartement: ['appartement','appart','apart','t2','t3','t4','f2','f3'],
+  studio: ['studio'],
+  camping: ['tente','camping','caravane','mobil','mobilhome']
+};
+function normalize(s){
+  return (s==null ? '' : String(s)).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function matchLogement(logement, cat){
+  if(!cat) return true;
+  const l = normalize(logement);
+  return (LOGEMENT_KEYWORDS[cat]||[]).some(k => l.includes(k));
+}
+function onTypeChange(){
+  const showOffre = document.getElementById('filter-type').value !== 'besoin';
+  document.querySelectorAll('.offre-filter').forEach(el => { el.style.display = showOffre ? '' : 'none'; });
+  renderList();
+}
+function resetFilters(){
+  document.getElementById('filter-type').value = 'all';
+  document.getElementById('filter-secteur').value = '';
+  document.getElementById('filter-logement').value = '';
+  document.getElementById('filter-capacite').value = '0';
+  document.getElementById('filter-duree').value = '';
+  onTypeChange();
+}
+
 function renderList(){
   const typeFilter = document.getElementById('filter-type').value;
-  const secteurFilter = document.getElementById('filter-secteur').value.trim().toLowerCase();
+  const secteurFilter = normalize(document.getElementById('filter-secteur').value.trim());
+  const logementFilter = document.getElementById('filter-logement').value;
+  const capaciteFilter = parseInt(document.getElementById('filter-capacite').value, 10) || 0;
+  const dureeFilter = document.getElementById('filter-duree').value;
   const cardsEl = document.getElementById('cards');
+  const offreScope = typeFilter !== 'besoin'; // filtres logement/capacité ne s'appliquent qu'aux offres
 
   let items = allListings.slice();
   if(typeFilter !== 'all') items = items.filter(it => it.type === typeFilter);
-  if(secteurFilter) items = items.filter(it => (it.secteur||'').toLowerCase().includes(secteurFilter));
+  if(secteurFilter) items = items.filter(it => normalize(it.secteur).includes(secteurFilter));
+  if(dureeFilter) items = items.filter(it => (it.duree||'') === dureeFilter);
+  if(offreScope && logementFilter) items = items.filter(it => it.type === 'offre' && matchLogement(it.logement, logementFilter));
+  if(offreScope && capaciteFilter) items = items.filter(it => {
+    if(it.type !== 'offre') return false;
+    const cap = parseInt(it.capacite, 10);
+    return !isNaN(cap) && cap >= capaciteFilter;
+  });
 
   document.getElementById('count-tag').textContent = items.length + ' annonce' + (items.length>1?'s':'');
 
   if(items.length === 0){
-    cardsEl.innerHTML = '<p class="empty">Aucune annonce pour l\'instant.</p>';
+    const hasFilters = typeFilter!=='all' || secteurFilter || dureeFilter || (offreScope && (logementFilter || capaciteFilter));
+    cardsEl.innerHTML = '<p class="empty">' + (hasFilters
+      ? 'Aucune annonce ne correspond à ces critères.'
+      : 'Aucune annonce pour l\'instant.') + '</p>';
     return;
   }
 

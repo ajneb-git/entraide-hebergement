@@ -183,6 +183,15 @@
     font-size:.8rem; padding:6px 10px; border-radius:8px; cursor:pointer;
   }
   .btn-edit:hover{background:var(--water-soft);}
+  .cta-hero{
+    display:inline-flex; align-items:center; gap:8px; margin-top:16px;
+    background:var(--sand); color:var(--pine-deep); border:none; border-radius:10px;
+    padding:13px 22px; font-family:'Barlow Semi Condensed','Public Sans',sans-serif;
+    font-weight:800; font-size:1.02rem; cursor:pointer; transition:.15s ease;
+    box-shadow:0 2px 10px rgba(0,0,0,.18);
+  }
+  .cta-hero:hover{background:#fff; transform:translateY(-1px);}
+  @media (max-width:520px){ .cta-hero{width:100%; justify-content:center; text-align:center;} }
 </style>
 </head>
 <body>
@@ -192,6 +201,7 @@
     <div class="brand"><span class="brand-mark">i</span> Entraide indépendante — non officielle</div>
     <h1>Annuaire d'entraide hébergement</h1>
     <p>Feux de forêt en Gironde, juillet 2026. Un espace pour se signaler entre voisins — sans intermédiaire, sans garantie.</p>
+    <button class="cta-hero" type="button" onclick="goToOffers()">Je cherche un hébergement — voir les offres&nbsp;↓</button>
   </div>
 </header>
 
@@ -279,7 +289,7 @@
     </form>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="annonces">
     <h2>Annonces publiées</h2>
     <div class="list-head">
       <button class="btn btn-ghost filters-toggle" type="button" onclick="toggleFilters()" aria-expanded="false" aria-controls="list-controls">Filtrer les annonces ▾</button>
@@ -509,6 +519,13 @@ function resetFilters(){
   document.getElementById('filter-capacite').value = '0';
   document.getElementById('filter-duree').value = '';
   onTypeChange();
+}
+
+function goToOffers(){
+  const typeSel = document.getElementById('filter-type');
+  if(typeSel){ typeSel.value = 'offre'; onTypeChange(); }
+  const target = document.getElementById('annonces');
+  if(target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function toggleFilters(){

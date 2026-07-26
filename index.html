@@ -332,6 +332,9 @@ function escapeHtml(s){
 
 async function submitListing(ev, type){
   ev.preventDefault();
+  const form = ev.target;
+  const submitBtn = form.querySelector('button[type="submit"]');
+  if(submitBtn && submitBtn.disabled) return false; // envoi déjà en cours → anti-doublon
   const p = type === 'besoin' ? 'b-' : 'o-';
   const get = id => document.getElementById(p+id).value.trim();
 
@@ -363,6 +366,8 @@ async function submitListing(ev, type){
     obj.logement = get('type');
   }
 
+  const label = type === 'besoin' ? 'Publier ma demande' : 'Publier mon offre';
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Publication…'; }
   try{
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${SB_TABLE}`, {
       method: 'POST',
@@ -371,11 +376,13 @@ async function submitListing(ev, type){
     });
     if(!res.ok) throw new Error('échec ' + res.status);
     showToast('Annonce publiée.');
-    ev.target.reset();
+    form.reset();
     loadListings();
   }catch(e){
     showToast("Erreur lors de la publication — réessayez.");
     console.error(e);
+  }finally{
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = label; }
   }
   return false;
 }

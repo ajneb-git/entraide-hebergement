@@ -154,6 +154,11 @@
     margin-top:8px; padding:8px 10px; background:var(--water-soft); border-radius:6px;
     font-size:.9rem; font-weight:600; color:var(--pine-deep); word-break:break-word;
   }
+  .contact-safety-tip{
+    display:block; margin-top:6px; font-size:.78rem; font-weight:500;
+    color:var(--ink-soft);
+  }
+  .contact-safety-tip a{color:var(--water); font-weight:700; text-decoration:underline;}
   .empty{color:var(--ink-soft); font-size:.92rem; padding:14px 0;}
 
   footer{
@@ -646,6 +651,10 @@ async function revealContact(id, btn){
     const box = document.createElement('div');
     box.className = 'contact-box';
     box.textContent = contact || 'Contact indisponible';
+    const tip = document.createElement('small');
+    tip.className = 'contact-safety-tip';
+    tip.innerHTML = '🛡️ Avant de vous déplacer, lisez nos <a href="conseils.html" target="_blank" rel="noopener">conseils de sécurité</a>.';
+    box.appendChild(tip);
     btn.replaceWith(box);
   }catch(e){
     btn.disabled = false; btn.textContent = 'Afficher le contact';

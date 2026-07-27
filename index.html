@@ -319,6 +319,12 @@
         <option value="besoin">Demandes d'hébergement</option>
         <option value="offre">Offres d'hébergement</option>
       </select>
+      <select id="filter-region" onchange="renderList()" aria-label="Région">
+        <option value="">Toutes régions</option>
+        <option value="bordelaise">Région bordelaise</option>
+        <option value="na">Nouvelle-Aquitaine (hors bordelaise)</option>
+        <option value="autres">Autres régions</option>
+      </select>
       <input id="filter-secteur" placeholder="Filtrer par commune…" oninput="renderList()">
       <select id="filter-logement" class="offre-filter" onchange="renderList()" aria-label="Type de logement">
         <option value="">Tout logement</option>
@@ -534,13 +540,86 @@ const LOGEMENT_KEYWORDS = {
   camping: ['tente','camping','caravane','mobil','mobilhome']
 };
 function normalize(s){
-  return (s==null ? '' : String(s)).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return (s==null ? '' : String(s)).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[-'\u2019]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 function matchLogement(logement, cat){
   if(!cat) return true;
   const l = normalize(logement);
   return (LOGEMENT_KEYWORDS[cat]||[]).some(k => l.includes(k));
 }
+
+// Classification région à partir du texte libre 'secteur'. Approche pragmatique en 3 temps :
+// 1) code département détecté dans le texte (fiable quand présent)
+// 2) mots-clés villes/communes calibrés sur les données réelles
+// 3) par défaut -> Nouvelle-Aquitaine (l'outil est fondamentalement girondin)
+// Non garanti à 100% sur les cas ambigus (quartiers, "proche de X", fautes de frappe).
+const NA_DEPT_CODES = new Set(['16','17','19','23','24','33','40','47','64','79','86','87']);
+const BORDEAUX_METROPOLE = [
+  'bordeaux','ambares et lagrave','ambes','artigues pres bordeaux','bassens','begles',
+  'blanquefort','bouliac','le bouscat','bouscat','bruges','carbon blanc','cenon','eysines',
+  'floirac','gradignan','le haillan','haillan','lormont','martignas sur jalle','merignac',
+  'parempuyre','pessac','saint aubin de medoc','saint louis de montferrand',
+  'saint medard en jalles','saint vincent de paul','le taillan medoc','taillan medoc',
+  'talence',"villenave d ornon","villenave dornon"
+];
+const NA_KEYWORDS = [
+  // Gironde (hors métropole)
+  'libourne','langon','cestas','arcachon','bazas','langoiran','ahetze','latresne','haux',
+  'coutras','sadirac','tauriac','la teste','gujan mestras','le pian','cussac fort medoc',
+  'saint andre de cubzac','leognan','gironde sur dropt','le teich','villenave de rions',
+  'soulac sur mer','faleyras','cambes','saucats','hourtin','caudrot','salignac','creon',
+  'captieux','ludon medoc','saint selve','gignac','cubnezais','val de livenne','le porge',
+  'saint caprais de bordeaux','izon','lacanau','andernos','biganos','mios','marcheprime',
+  'audenge','lanton','carcans','le porge','saint loubes','targon','pauillac','blaye',
+  // Dordogne
+  'perigueux','bergerac','sarlat','bassillac','montpon menesterol','montcaret','coursac',
+  'saint martial d artenset','brive',
+  // Landes
+  'dax','mont de marsan','capbreton','saint vincent de tyrosse','saint martin de seignanx',
+  'linxe','gabarret','tarnos','biscarrosse',
+  // Lot-et-Garonne
+  'agen','casteljaloux','tonneins','villeneuve sur lot','marmande','pinderes',
+  // Pyrénées-Atlantiques
+  'pau','bayonne','anglet','biarritz','orthez','bearn',
+  // Charente / Charente-Maritime
+  'angouleme','cognac','barbezieux','royan','la rochelle','saintes','rochefort','oleron','jonzac',
+  // Deux-Sèvres / Vienne / Haute-Vienne / Corrèze / Creuse
+  'niort','la ferriere en parthenay','melle','poitiers','chatellerault','limoges','tulle','gueret',
+  'nouvelle aquitaine'
+];
+const AUTRES_KEYWORDS = [
+  'paris','idf','ile de france','toulouse','colomiers','longages','mondonville','flourens',
+  'lyon','montpellier','marseille','nice','lille','strasbourg','rennes','nantes','angers',
+  'bretagne','normandie','vendee','haute savoie','feigeres','moirans','albi','tarbes',
+  'le puy en velay','blois','tours','moulins','gourdon','goudourville','flamarens',
+  'carrieres sous poissy','loire atlantique','occitanie'
+];
+function classifyRegion(secteur){
+  const s = normalize(secteur);
+  if(!s) return 'na';
+  // 1) code département explicite (2 chiffres, isolé ou en début de code postal 5 chiffres)
+  const deptMatch = s.match(/(\d{2})\d{3}\b/) || s.match(/\b(\d{2})\b/);
+  if(deptMatch){
+    const dept = deptMatch[1];
+    const n = parseInt(dept, 10);
+    if(NA_DEPT_CODES.has(dept)){
+      // 33 = Gironde : distinguer bordelaise du reste via les mots-clés ci-dessous (pas de retour immédiat)
+      if(dept !== '33') return 'na';
+    } else if(n >= 1 && n <= 95){
+      return 'autres';
+    }
+  }
+  // 2) mots-clés Bordeaux Métropole (inclut quartiers "bordeaux X")
+  if(s.includes('bordeaux') || BORDEAUX_METROPOLE.some(k => s.includes(k))) return 'bordelaise';
+  // 3) mots-clés autres régions (hors Nouvelle-Aquitaine)
+  if(AUTRES_KEYWORDS.some(k => s.includes(k))) return 'autres';
+  // 4) mots-clés Nouvelle-Aquitaine hors métropole
+  if(NA_KEYWORDS.some(k => s.includes(k))) return 'na';
+  // 5) défaut : l'outil est girondin, on suppose Nouvelle-Aquitaine
+  return 'na';
+}
+
 function onTypeChange(){
   const showOffre = document.getElementById('filter-type').value !== 'besoin';
   document.querySelectorAll('.offre-filter').forEach(el => { el.style.display = showOffre ? '' : 'none'; });
@@ -548,6 +627,7 @@ function onTypeChange(){
 }
 function resetFilters(){
   document.getElementById('filter-type').value = 'all';
+  document.getElementById('filter-region').value = '';
   document.getElementById('filter-secteur').value = '';
   document.getElementById('filter-logement').value = '';
   document.getElementById('filter-capacite').value = '0';
@@ -583,6 +663,7 @@ function toggleFilters(){
 
 function renderList(){
   const typeFilter = document.getElementById('filter-type').value;
+  const regionFilter = document.getElementById('filter-region').value;
   const secteurFilter = normalize(document.getElementById('filter-secteur').value.trim());
   const logementFilter = document.getElementById('filter-logement').value;
   const capaciteFilter = parseInt(document.getElementById('filter-capacite').value, 10) || 0;
@@ -592,6 +673,7 @@ function renderList(){
 
   let items = allListings.slice();
   if(typeFilter !== 'all') items = items.filter(it => it.type === typeFilter);
+  if(regionFilter) items = items.filter(it => classifyRegion(it.secteur) === regionFilter);
   if(secteurFilter) items = items.filter(it => normalize(it.secteur).includes(secteurFilter));
   if(dureeFilter) items = items.filter(it => (it.duree||'') === dureeFilter);
   if(offreScope && logementFilter) items = items.filter(it => it.type === 'offre' && matchLogement(it.logement, logementFilter));
@@ -605,7 +687,7 @@ function renderList(){
   document.getElementById('count-tag').textContent = items.length + ' annonce' + (items.length>1?'s':'');
 
   if(items.length === 0){
-    const hasFilters = typeFilter!=='all' || secteurFilter || dureeFilter || recentOnly || (offreScope && (logementFilter || capaciteFilter));
+    const hasFilters = typeFilter!=='all' || regionFilter || secteurFilter || dureeFilter || recentOnly || (offreScope && (logementFilter || capaciteFilter));
     cardsEl.innerHTML = '<p class="empty">' + (hasFilters
       ? 'Aucune annonce ne correspond à ces critères.'
       : 'Aucune annonce pour l\'instant.') + '</p>';

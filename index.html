@@ -612,7 +612,23 @@ const AUTRES_KEYWORDS = [
   'lyon','montpellier','marseille','nice','lille','strasbourg','rennes','nantes','angers',
   'bretagne','normandie','vendee','haute savoie','feigeres','moirans','albi','tarbes',
   'le puy en velay','blois','tours','moulins','gourdon','goudourville','flamarens',
-  'carrieres sous poissy','loire atlantique','occitanie'
+  'carrieres sous poissy','loire atlantique','occitanie',
+  // cas signalés (annonces réelles mal classées, sans code département dans le texte)
+  'vertou','epinac','pellevoisin',
+  // noms de départements / régions hors Nouvelle-Aquitaine (vérifiés sans collision avec les
+  // mots-clés Bordeaux/NA existants ; 'tarn' et 'yonne' volontairement exclus car ils
+  // matcheraient à tort 'tarnos' et 'bayonne', deux villes de Nouvelle-Aquitaine)
+  'aisne','allier','alpes de haute provence','hautes alpes','alpes maritimes','ardeche','ardennes',
+  'ariege','aveyron','bouches du rhone','calvados','cantal','cote d or','cotes d armor','doubs',
+  'drome','eure et loir','finistere','gard','haute garonne','gers','herault','ille et vilaine',
+  'indre','indre et loire','isere','jura','loir et cher','haute loire','loiret','lozere',
+  'maine et loire','marne','haute marne','mayenne','meurthe et moselle','meuse','morbihan',
+  'moselle','nievre','oise','orne','pas de calais','puy de dome','hautes pyrenees',
+  'pyrenees orientales','bas rhin','rhone','haute saone','saone et loire','sarthe','savoie',
+  'seine maritime','seine et marne','yvelines','tarn et garonne','vaucluse','vosges',
+  'territoire de belfort','essonne','hauts de seine','seine saint denis','val de marne','val d oise',
+  'auvergne rhone alpes','bourgogne franche comte','bourgogne','centre val de loire','corse',
+  'grand est','hauts de france','provence alpes cote d azur','pays de la loire'
 ];
 function classifyRegion(secteur){
   const s = normalize(secteur);

@@ -510,17 +510,36 @@ async function submitListing(ev, type){
   return false;
 }
 
+// Supabase/PostgREST plafonne chaque requête à 1000 lignes (db-max-rows), même en demandant
+// plus via l'en-tête Range. Au-delà de 1000 annonces valides, il faut donc paginer par appels
+// successifs (Range 0-999, 1000-1999, ...) jusqu'à récupérer une page incomplète (= dernière page).
+const PAGE_SIZE = 1000;
+const MAX_PAGES = 20; // garde-fou (20 000 lignes) contre une boucle infinie en cas de réponse inattendue
+
+async function fetchAllListings(cols, now){
+  const filter = `or=(expires_at.gt.${now},expires_at.is.null)`;
+  let all = [];
+  for(let page = 0; page < MAX_PAGES; page++){
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SB_TABLE}?select=${cols}&${filter}&order=created_at.desc`, {
+      headers: { ...SB_HEADERS, 'Range': `${from}-${to}` }
+    });
+    if(!res.ok) throw new Error('échec ' + res.status);
+    const chunk = await res.json();
+    all = all.concat(chunk);
+    if(chunk.length < PAGE_SIZE) break; // dernière page atteinte
+  }
+  return all;
+}
+
 async function loadListings(){
   const cardsEl = document.getElementById('cards');
   cardsEl.innerHTML = '<p class="empty">Chargement…</p>';
   const now = Date.now();
   const cols = 'id,type,prenom,secteur,duree,message,personnes,animaux,capacite,logement,created_at,expires_at';
   try{
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SB_TABLE}?select=${cols}&or=(expires_at.gt.${now},expires_at.is.null)&order=created_at.desc`, {
-      headers: SB_HEADERS
-    });
-    if(!res.ok) throw new Error('échec ' + res.status);
-    const items = await res.json();
+    const items = await fetchAllListings(cols, now);
     allListings = items
       .map(it => ({...it, createdAt: it.created_at, expiresAt: it.expires_at}))
       .filter(it => !it.expiresAt || it.expiresAt > now);

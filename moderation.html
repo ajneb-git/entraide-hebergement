@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Modération — Entraide Hébergement</title>
+<style>
+  :root{
+    --pine:#193A2E; --pine-deep:#0E241C; --sand:#F2ECDD; --sand-card:#FFFDF7;
+    --ink:#1B241E; --ink-soft:#4B564E; --line:#D9CFB3;
+    --alert:#B8481E; --alert-bg:#FBE7DC; --water:#1F5B66; --water-soft:#E4EEEC;
+    --fresh:#2F8F5B; --fresh-bg:#E3F1E8;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--sand); color:var(--ink); font-family:'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height:1.5;}
+  @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap');
+  h1,h2,.brand,.card-badge{font-family:'Barlow Semi Condensed','Public Sans',sans-serif;}
+
+  header.top{background:var(--pine); color:var(--sand); padding:20px 18px 24px;}
+  .wrap{max-width:900px; margin:0 auto; padding:0 18px;}
+  .brand{font-weight:800; text-transform:uppercase; letter-spacing:.03em; font-size:.85rem; color:#CFE0D6;}
+  header.top h1{margin:10px 0 4px; font-size:1.5rem; font-weight:800;}
+  header.top p{margin:0; color:#CFE0D6; font-size:.9rem;}
+
+  .summary{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:22px 0;}
+  @media (max-width:640px){.summary{grid-template-columns:1fr 1fr;}}
+  .stat{background:var(--sand-card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; text-align:center;}
+  .stat .n{font-size:1.7rem; font-weight:800; color:var(--pine-deep);}
+  .stat .n.zero{color:var(--fresh);}
+  .stat .l{font-size:.78rem; color:var(--ink-soft);}
+
+  .toolbar{display:flex; justify-content:space-between; align-items:center; gap:10px; margin:10px 0 22px; flex-wrap:wrap; font-size:.85rem; color:var(--ink-soft);}
+  button.btn{
+    border:1px solid var(--water); background:transparent; color:var(--water);
+    border-radius:8px; padding:8px 14px; font-weight:700; font-size:.85rem; cursor:pointer;
+  }
+  button.btn:hover{background:var(--water-soft);}
+
+  section.group{margin:0 0 32px;}
+  section.group h2{font-size:1.05rem; margin:0 0 4px; display:flex; align-items:center; gap:8px;}
+  section.group .desc{font-size:.85rem; color:var(--ink-soft); margin:0 0 14px;}
+  .empty-ok{background:var(--fresh-bg); color:var(--fresh); border-radius:8px; padding:10px 14px; font-size:.88rem; font-weight:600;}
+
+  .cards{display:grid; gap:10px;}
+  .card{background:var(--sand-card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px;}
+  .card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px; flex-wrap:wrap;}
+  .card-badge{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em; padding:3px 9px; border-radius:20px; background:var(--water-soft); color:var(--water);}
+  .card-badge.besoin{background:var(--alert-bg); color:var(--alert);}
+  .card-id{font-size:.72rem; color:var(--ink-soft); font-family:monospace; cursor:pointer;}
+  .card-meta{font-size:.82rem; color:var(--ink-soft); margin:0 0 6px;}
+  .card-msg{font-size:.9rem; margin:0 0 8px; white-space:pre-wrap;}
+  mark{background:#FBE7A1; padding:0 2px; border-radius:2px;}
+  .card-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .btn-small{font-size:.78rem; padding:6px 10px;}
+  .contact-box{margin-top:6px; padding:6px 10px; background:var(--water-soft); border-radius:6px; font-size:.85rem; font-weight:600; color:var(--pine-deep);}
+
+  .loading{color:var(--ink-soft); padding:20px 0;}
+  footer{margin:30px 0 40px; font-size:.8rem; color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">Modération privée</div>
+    <h1>Annonces à vérifier</h1>
+    <p>Détection automatique (mots-clés) sur l'ensemble des annonces — à valider humainement, pas une suppression automatique.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="summary" class="summary"></div>
+  <div class="toolbar">
+    <span id="scanned-info">Chargement…</span>
+    <button class="btn" onclick="resetDismissed()">Réafficher les éléments ignorés</button>
+  </div>
+  <div id="groups"><p class="loading">Analyse en cours…</p></div>
+
+  <footer>
+    Page non référencée et non liée depuis le site public. La suppression n'est pas automatisée ici :
+    les annonces retenues comme non conformes se suppriment depuis le tableau Supabase (table <code>listings</code>),
+    en utilisant l'identifiant affiché sur chaque carte. « Ignorer » masque une annonce dans CE navigateur
+    uniquement (ne la supprime pas).
+  </footer>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://cnimndyaehrjtsqalwfu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuaW1uZHlhZWhyanRzcWFsd2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDUyNTIsImV4cCI6MjEwMDQ4MTI1Mn0.iCGdfRnxdxk7lu3vm-FxUFINCD1cGm5QIP-iUb_t-d8';
+const SB_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+const PAGE_SIZE = 1000;
+const MAX_PAGES = 20;
+const DISMISS_KEY = 'eh_mod_dismissed';
+
+function normalize(s){
+  return (s==null ? '' : String(s)).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[-'’]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Mots-clés calibrés sur les vraies données (voir historique) : montants/paiement, plaintes hors-sujet.
+const MONEY_KEYWORDS = [
+  'euro','€','loyer','tarif','prix','facture','facturé','paypal','iban','virement',
+  'espèces','especes','caution','acompte','payant','tarification','par nuit','nuitée'
+];
+const RANT_KEYWORDS = [
+  'honte','scandale',"n'importe quoi",'ras le bol','ras-le-bol','arnaque','profiteur',
+  'scandaleux','inadmissible','degueulasse','dégueulasse'
+];
+function findMatch(text, keywords){
+  const n = normalize(text);
+  for(const k of keywords){ if(n.includes(normalize(k))) return k; }
+  return null;
+}
+function hasRepeatedLetters(text){
+  return /([a-zàâäéèêëïîôöùûüÿñç])\1{5,}/i.test(text || '');
+}
+
+function getDismissed(){
+  try{ return new Set(JSON.parse(localStorage.getItem(DISMISS_KEY) || '[]')); }catch(e){ return new Set(); }
+}
+function dismiss(id){
+  const d = getDismissed(); d.add(id);
+  localStorage.setItem(DISMISS_KEY, JSON.stringify([...d]));
+  document.getElementById('card-'+CSS.escape(id))?.remove();
+  refreshCounts();
+}
+function resetDismissed(){
+  localStorage.removeItem(DISMISS_KEY);
+  location.reload();
+}
+function copyId(id){
+  navigator.clipboard?.writeText(id);
+  const el = document.getElementById('idlabel-'+CSS.escape(id));
+  if(el){ const old = el.textContent; el.textContent = 'copié ✓'; setTimeout(()=>{ el.textContent = old; }, 1200); }
+}
+async function revealContact(id, btn){
+  btn.disabled = true; btn.textContent = '…';
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_contact`, {
+      method:'POST', headers: {...SB_HEADERS, 'Content-Type':'application/json'},
+      body: JSON.stringify({ p_id: id })
+    });
+    const contact = await res.json();
+    const box = document.createElement('div');
+    box.className = 'contact-box';
+    box.textContent = contact || 'Contact indisponible';
+    btn.replaceWith(box);
+  }catch(e){
+    btn.disabled = false; btn.textContent = 'Afficher le contact';
+  }
+}
+
+async function fetchAllListings(){
+  const cols = 'id,type,prenom,secteur,message,logement,created_at';
+  let all = [];
+  for(let page = 0; page < MAX_PAGES; page++){
+    const from = page * PAGE_SIZE, to = from + PAGE_SIZE - 1;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/listings?select=${cols}&order=created_at.desc`, {
+      headers: { ...SB_HEADERS, 'Range': `${from}-${to}` }
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const chunk = await res.json();
+    all = all.concat(chunk);
+    if(chunk.length < PAGE_SIZE) break;
+  }
+  return all;
+}
+
+function timeAgo(ts){
+  const diffMin = Math.floor((Date.now() - ts) / 60000);
+  if(diffMin < 60) return 'il y a ' + Math.max(diffMin,0) + ' min';
+  const h = Math.floor(diffMin/60); if(h<24) return 'il y a ' + h + 'h';
+  return 'il y a ' + Math.floor(h/24) + ' j';
+}
+
+function highlight(text, term){
+  const esc = escapeHtml(text || '');
+  if(!term) return esc;
+  const re = new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'ig');
+  return esc.replace(re, '<mark>$1</mark>');
+}
+
+function renderCard(item, matched){
+  const dismissed = getDismissed();
+  if(dismissed.has(item.id)) return '';
+  return `
+  <div class="card" id="card-${escapeHtml(item.id)}">
+    <div class="card-top">
+      <span class="card-badge ${item.type==='besoin'?'besoin':''}">${item.type==='besoin'?'Demande':'Offre'}</span>
+      <span class="card-id" id="idlabel-${escapeHtml(item.id)}" onclick="copyId('${escapeHtml(item.id)}')" title="Copier l'identifiant">${escapeHtml(item.id)} 📋</span>
+    </div>
+    <div class="card-meta">${escapeHtml(item.secteur)} — ${escapeHtml(item.prenom)} · ${timeAgo(item.created_at)}${item.logement ? ' · ' + escapeHtml(item.logement) : ''}</div>
+    ${item.message ? `<p class="card-msg">${highlight(item.message, matched)}</p>` : '<p class="card-msg" style="color:var(--ink-soft)">(pas de message)</p>'}
+    <div class="card-actions">
+      <button class="btn btn-small" onclick="revealContact('${escapeHtml(item.id)}', this)">Afficher le contact</button>
+      <button class="btn btn-small" onclick="dismiss('${escapeHtml(item.id)}')">Ignorer</button>
+    </div>
+  </div>`;
+}
+
+function refreshCounts(){
+  document.querySelectorAll('section.group').forEach(sec => {
+    const n = sec.querySelectorAll('.card').length;
+    const badge = sec.querySelector('.count');
+    if(badge) badge.textContent = n;
+  });
+}
+
+async function run(){
+  const groupsEl = document.getElementById('groups');
+  const summaryEl = document.getElementById('summary');
+  try{
+    const items = await fetchAllListings();
+    document.getElementById('scanned-info').textContent = items.length.toLocaleString('fr-FR') + ' annonces analysées (toutes, y compris expirées)';
+
+    const money = [], rant = [], spam = [], noLogement = [];
+    for(const it of items){
+      const m1 = findMatch(it.message, MONEY_KEYWORDS);
+      if(m1) money.push({item:it, matched:m1});
+      const m2 = findMatch(it.message, RANT_KEYWORDS);
+      if(m2) rant.push({item:it, matched:m2});
+      if(hasRepeatedLetters(it.message)) spam.push({item:it, matched:null});
+      if(it.type === 'offre' && !((it.logement||'').trim())) noLogement.push({item:it, matched:null});
+    }
+
+    summaryEl.innerHTML = `
+      <div class="stat"><div class="n ${money.length?'':'zero'}">${money.length}</div><div class="l">Mentions d'argent</div></div>
+      <div class="stat"><div class="n ${rant.length?'':'zero'}">${rant.length}</div><div class="l">Hors-sujet / plainte</div></div>
+      <div class="stat"><div class="n ${spam.length?'':'zero'}">${spam.length}</div><div class="l">Spam probable</div></div>
+      <div class="stat"><div class="n ${noLogement.length?'':'zero'}">${noLogement.length}</div><div class="l">Logement non précisé</div></div>
+    `;
+
+    const groups = [
+      {key:'money', title:'💶 Mentions d\'argent / paiement', desc:'Cet annuaire est gratuit — toute mention de prix, loyer, paiement mérite vérification.', rows:money},
+      {key:'rant', title:'💬 Hors-sujet / plainte', desc:'Message qui ne décrit pas une offre ou une demande (commentaire, plainte…).', rows:rant},
+      {key:'spam', title:'🚨 Spam probable', desc:'Répétition suspecte de caractères dans le message.', rows:spam},
+      {key:'logement', title:'📋 Offres sans type de logement précisé', desc:'Champ optionnel non renseigné — à compléter, pas nécessairement non conforme.', rows:noLogement},
+    ];
+
+    groupsEl.innerHTML = groups.map(g => {
+      const cardsHtml = g.rows.map(r => renderCard(r.item, r.matched)).filter(Boolean).join('');
+      const visibleCount = g.rows.filter(r => !getDismissed().has(r.item.id)).length;
+      return `
+      <section class="group">
+        <h2>${g.title} <span class="card-badge" style="background:var(--line);color:var(--ink)">${visibleCount}</span></h2>
+        <p class="desc">${g.desc}</p>
+        ${visibleCount === 0 ? '<div class="empty-ok">✓ Rien à signaler dans cette catégorie.</div>' : `<div class="cards">${cardsHtml}</div>`}
+      </section>`;
+    }).join('');
+  }catch(e){
+    groupsEl.innerHTML = '<p class="loading">Erreur lors du chargement — réessayez.</p>';
+    console.error(e);
+  }
+}
+
+run();
+</script>
+</body>
+</html>

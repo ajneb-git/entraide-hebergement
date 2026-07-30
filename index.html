@@ -335,6 +335,11 @@
         <option value="studio">Studio</option>
         <option value="camping">Tente / camping-car</option>
       </select>
+      <select id="filter-animaux" class="offre-filter" onchange="renderList()" aria-label="Animaux acceptés">
+        <option value="">Animaux : indifférent</option>
+        <option value="oui">Animaux acceptés</option>
+        <option value="non">Animaux refusés</option>
+      </select>
       <select id="filter-capacite" class="offre-filter" onchange="renderList()" aria-label="Capacité minimale">
         <option value="0">Capacité indifférente</option>
         <option value="1">≥ 1 personne</option>
@@ -571,6 +576,28 @@ function matchLogement(logement, cat){
   return (LOGEMENT_KEYWORDS[cat]||[]).some(k => l.includes(k));
 }
 
+// Détection accepte/refuse animaux dans le message libre (le champ dédié 'animaux' n'est
+// jamais rempli côté offres). Négations vérifiées en premier pour ne pas se tromper de sens
+// (ex. 'pas d'animaux' ne doit pas matcher comme acceptation). Calibré sur les vraies données ;
+// pas garanti à 100% sur les cas très ambigus.
+const ANIMAUX_NEG_PATTERNS = [
+  /pas d.{0,2}anima/, /sans anima/, /anima\w* non accept/, /anima\w* pas accept/,
+  /n accueillons pas/, /ne peux pas accueillir/, /n acceptons pas/,
+  /n accepte pas/, /accepte pas d.{0,2}anima/, /preference sans/
+];
+const ANIMAUX_POS_PATTERNS = [
+  /anima\w* accept/, /anima\w* bienvenu/, /chien\w* ok/, /chat\w* ok/,
+  /chien\w* et chat\w* accept/, /chat\w* et chien\w* accept/,
+  /petits? anima\w* (sont )?(egalement )?(les )?bienvenu/,
+  /accueillir des anima/, /anima\w* petit\w* accept/
+];
+function classifyAnimaux(message){
+  const n = normalize(message);
+  if(ANIMAUX_NEG_PATTERNS.some(re => re.test(n))) return 'non';
+  if(ANIMAUX_POS_PATTERNS.some(re => re.test(n))) return 'oui';
+  return 'indetermine';
+}
+
 // Classification région à partir du texte libre 'secteur'. Approche pragmatique en 3 temps :
 // 1) code département détecté dans le texte (fiable quand présent)
 // 2) mots-clés villes/communes calibrés sur les données réelles
@@ -668,6 +695,7 @@ function resetFilters(){
   document.getElementById('filter-region').value = '';
   document.getElementById('filter-secteur').value = '';
   document.getElementById('filter-logement').value = '';
+  document.getElementById('filter-animaux').value = '';
   document.getElementById('filter-capacite').value = '0';
   document.getElementById('filter-duree').value = '';
   recentOnly = false;
@@ -710,6 +738,7 @@ function renderList(resetPage = true){
   const regionFilter = document.getElementById('filter-region').value;
   const secteurFilter = normalize(document.getElementById('filter-secteur').value.trim());
   const logementFilter = document.getElementById('filter-logement').value;
+  const animauxFilter = document.getElementById('filter-animaux').value;
   const capaciteFilter = parseInt(document.getElementById('filter-capacite').value, 10) || 0;
   const dureeFilter = document.getElementById('filter-duree').value;
   const cardsEl = document.getElementById('cards');
@@ -721,6 +750,7 @@ function renderList(resetPage = true){
   if(secteurFilter) items = items.filter(it => normalize(it.secteur).includes(secteurFilter));
   if(dureeFilter) items = items.filter(it => (it.duree||'') === dureeFilter);
   if(offreScope && logementFilter) items = items.filter(it => it.type === 'offre' && matchLogement(it.logement, logementFilter));
+  if(offreScope && animauxFilter) items = items.filter(it => it.type === 'offre' && classifyAnimaux(it.message) === animauxFilter);
   if(offreScope && capaciteFilter) items = items.filter(it => {
     if(it.type !== 'offre') return false;
     const cap = parseInt(it.capacite, 10);
@@ -731,7 +761,7 @@ function renderList(resetPage = true){
   document.getElementById('count-tag').textContent = items.length + ' annonce' + (items.length>1?'s':'');
 
   if(items.length === 0){
-    const hasFilters = typeFilter!=='all' || regionFilter || secteurFilter || dureeFilter || recentOnly || (offreScope && (logementFilter || capaciteFilter));
+    const hasFilters = typeFilter!=='all' || regionFilter || secteurFilter || dureeFilter || recentOnly || (offreScope && (logementFilter || animauxFilter || capaciteFilter));
     cardsEl.innerHTML = '<p class="empty">' + (hasFilters
       ? 'Aucune annonce ne correspond à ces critères.'
       : 'Aucune annonce pour l\'instant.') + '</p>';

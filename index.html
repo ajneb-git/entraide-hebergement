@@ -136,6 +136,7 @@
   }
 
   .cards{display:grid; gap:12px;}
+  .load-more-btn{justify-content:center; margin-top:4px;}
   .card{
     background:var(--sand-card); border:1px solid var(--line); border-radius:var(--radius);
     padding:15px 16px; position:relative;
@@ -415,6 +416,8 @@ const EXPIRE_DAYS = 10;
 let allListings = [];
 const RECENT_MS = 24*60*60*1000;
 let recentOnly = false;
+const PAGE_BATCH = 30;
+let visibleCount = PAGE_BATCH;
 
 function isRecent(ts){ return typeof ts === 'number' && (Date.now() - ts) < RECENT_MS; }
 function timeAgo(ts){
@@ -696,7 +699,13 @@ function toggleFilters(){
   }
 }
 
-function renderList(){
+function showMoreListings(){
+  visibleCount += PAGE_BATCH;
+  renderList(false);
+}
+
+function renderList(resetPage = true){
+  if(resetPage) visibleCount = PAGE_BATCH;
   const typeFilter = document.getElementById('filter-type').value;
   const regionFilter = document.getElementById('filter-region').value;
   const secteurFilter = normalize(document.getElementById('filter-secteur').value.trim());
@@ -729,7 +738,14 @@ function renderList(){
     return;
   }
 
-  cardsEl.innerHTML = items.map(renderCard).join('');
+  const visibleItems = items.slice(0, visibleCount);
+  cardsEl.innerHTML = visibleItems.map(renderCard).join('');
+
+  if(items.length > visibleCount){
+    const remaining = items.length - visibleCount;
+    cardsEl.insertAdjacentHTML('beforeend',
+      `<button class="btn btn-ghost load-more-btn" type="button" onclick="showMoreListings()">Voir plus d'annonces (${remaining} restantes)</button>`);
+  }
 }
 
 function renderCard(it){

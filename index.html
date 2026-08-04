@@ -213,12 +213,21 @@
 </head>
 <body>
 
+<div class="modal-overlay" id="closure-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="closure-title">
+  <div class="modal">
+    <div class="modal-close-row"><button class="btn btn-ghost" type="button" onclick="closeClosureModal()">Fermer ✕</button></div>
+    <h2 id="closure-title">La crise est terminée — merci !</h2>
+    <p>Les feux de forêt en Gironde de juillet 2026 sont derrière nous. Cet annuaire a permis à des centaines de personnes de se signaler entre voisins pendant l'urgence. Merci à toutes celles et ceux qui ont proposé un hébergement, et courage à celles et ceux qui reconstruisent.</p>
+    <p><b>Les annonces ont été retirées</b> : l'outil n'est plus utilisé pour de nouvelles demandes.</p>
+    <div><button class="btn btn-primary" type="button" onclick="closeClosureModal()">Fermer</button></div>
+  </div>
+</div>
+
 <header class="top">
   <div class="wrap">
     <div class="brand"><span class="brand-mark">i</span> Entraide indépendante — non officielle</div>
     <h1>Annuaire d'entraide hébergement</h1>
     <p>Feux de forêt en Gironde, juillet 2026. Un espace pour se signaler entre voisins — sans intermédiaire, sans garantie.</p>
-    <button class="cta-hero" type="button" onclick="goToOffers()">Je cherche un hébergement — voir les offres&nbsp;↓</button>
   </div>
 </header>
 
@@ -229,7 +238,7 @@
     Outil communautaire non officiel, non vérifié.
   </div>
 
-  <div class="tabs" role="tablist">
+  <div class="tabs" role="tablist" style="display:none">
     <button class="tab active" id="tab-besoin" role="tab" aria-selected="true" onclick="switchTab('besoin')">
       Je cherche un hébergement
       <small>Publier une demande</small>
@@ -240,7 +249,7 @@
     </button>
   </div>
 
-  <div class="panel" id="panel-besoin">
+  <div class="panel" id="panel-besoin" style="display:none">
     <h2>Publier une demande d'hébergement</h2>
     <p class="hint">Ces informations seront visibles publiquement. Ne donnez pas votre adresse exacte — un secteur ou une commune suffit.</p>
     <form id="form-besoin" onsubmit="return submitListing(event,'besoin')">
@@ -308,7 +317,7 @@
 
   <p class="contact-note">Une idée, une remarque, un bug à signaler ? <a href="mailto:benjamin.sonet@gmail.com">Contactez-nous ici</a>.</p>
 
-  <div class="panel" id="annonces">
+  <div class="panel" id="annonces" style="display:none">
     <h2>Annonces publiées</h2>
     <div class="list-head">
       <button class="btn btn-ghost filters-toggle" type="button" onclick="toggleFilters()" aria-expanded="false" aria-controls="list-controls">Filtrer les annonces ▾</button>
@@ -928,7 +937,16 @@ function trackVisit(){
   }catch(e){}
 }
 
-loadListings();
+function closeClosureModal(){
+  document.getElementById('closure-overlay').style.display = 'none';
+  try{ localStorage.setItem('eh_closure_seen', '1'); }catch(e){}
+}
+try{
+  if(!localStorage.getItem('eh_closure_seen')) document.getElementById('closure-overlay').style.display = 'flex';
+}catch(e){
+  document.getElementById('closure-overlay').style.display = 'flex';
+}
+
 trackVisit();
 </script>
 </body>

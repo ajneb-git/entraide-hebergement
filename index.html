@@ -172,8 +172,6 @@
     font-size:.82rem; color:var(--ink-soft);
   }
   footer h3{color:var(--ink); font-size:.95rem; margin-bottom:6px;}
-  .safety-list{margin:0 0 14px; padding-left:18px;}
-  .safety-list li{margin-bottom:4px;}
 
   .toast{
     position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
@@ -219,6 +217,7 @@
     <h2 id="closure-title">La crise est terminée — merci !</h2>
     <p>Les feux de forêt en Gironde de juillet 2026 sont derrière nous. Cet annuaire a permis à des centaines de personnes de se signaler entre voisins pendant l'urgence. Merci à toutes celles et ceux qui ont proposé un hébergement, et courage à celles et ceux qui reconstruisent.</p>
     <p><b>Les annonces ont été retirées</b> : l'outil n'est plus utilisé pour de nouvelles demandes.</p>
+    <p>Son code devient un <b>kit réutilisable</b> pour une prochaine crise ailleurs — <a href="#kit-panel" onclick="closeClosureModal()">détails plus bas sur cette page</a>.</p>
     <div><button class="btn btn-primary" type="button" onclick="closeClosureModal()">Fermer</button></div>
   </div>
 </div>
@@ -236,6 +235,12 @@
     <b>Urgence vitale : 18 ou 112.</b>
     Pour un hébergement d'urgence encadré, privilégiez les centres d'accueil de la préfecture — liste à jour et situation sur <a href="https://www.gironde.gouv.fr" target="_blank" rel="noopener">gironde.gouv.fr</a>.
     Outil communautaire non officiel, non vérifié.
+  </div>
+
+  <div class="panel" id="kit-panel">
+    <h2>♻️ Ce projet devient un kit réutilisable</h2>
+    <p class="hint">Le code source de cet annuaire est désormais disponible librement : un kit de déploiement rapide pour qu'une autre commune ou association puisse, lors d'une prochaine crise (feu, inondation, autre catastrophe nécessitant des hébergements d'urgence), mettre en ligne un outil similaire en quelques heures plutôt qu'en repartant de zéro. Il comprend le code complet, un guide d'installation pas à pas, et tous les retours d'expérience de ce déploiement (pièges rencontrés, choix de sécurité, calibrage des filtres).</p>
+    <a class="btn btn-primary" href="https://github.com/ajneb-git/entraide-hebergement-kit" target="_blank" rel="noopener">Voir le kit sur GitHub →</a>
   </div>
 
   <div class="tabs" role="tablist" style="display:none">
@@ -372,14 +377,6 @@
   </div>
 
   <footer>
-    <h3>Avant de contacter ou d'accueillir quelqu'un</h3>
-    <ul class="safety-list">
-      <li>Cet annuaire n'est ni vérifié ni modéré par une autorité — les informations publiées engagent uniquement leurs auteurs.</li>
-      <li>Privilégiez un appel téléphonique avant tout déplacement, et donnez-vous rendez-vous dans un lieu public si possible.</li>
-      <li>Ne communiquez pas votre adresse exacte publiquement.</li>
-      <li>Les annonces expirent automatiquement après 10 jours.</li>
-    </ul>
-    <a class="btn btn-primary" href="conseils.html" style="margin-bottom:14px;">📋 Voir tous nos conseils de sécurité</a>
     <p>Outil indépendant, sans lien avec la préfecture de la Gironde ni les services de secours.</p>
   </footer>
 </div>
